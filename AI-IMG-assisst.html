@@ -1121,13 +1121,14 @@
             
             // AUTO-DETECT PROXY: If we are served from port 8001, use current host
             const currentPort = window.location.port;
-            const proxyHost = window.location.hostname || '127.0.0.1';
+            const proxyHost = (window.location.hostname && window.location.hostname !== 'localhost') ? '127.0.0.1' : (window.location.hostname || '127.0.0.1');
             const proxyBase = (currentPort == '8001') ? `/proxy` : `http://${proxyHost}:8001/proxy`;
             
             // Check proxy health
             if (useProxy.checked) {
                 try {
-                    const hRes = await fetch((currentPort == '8001') ? `/health` : `http://${proxyHost}:8001/health`);
+                    const healthUrl = (currentPort == '8001') ? `/health` : `http://${proxyHost}:8001/health`;
+                    const hRes = await fetch(healthUrl);
                     if(hRes.ok) {
                         const hData = await hRes.json();
                         console.log("Proxy Version:", hData.version);
@@ -1172,7 +1173,7 @@
             
             const headers = { 'Content-Type': 'application/json' };
             const currentPort = window.location.port;
-            const proxyHost = window.location.hostname || '127.0.0.1';
+            const proxyHost = (window.location.hostname && window.location.hostname !== 'localhost') ? '127.0.0.1' : (window.location.hostname || '127.0.0.1');
             const proxyBase = (currentPort == '8001') ? `/proxy` : `http://${proxyHost}:8001/proxy`;
             
             if (useProxy.checked) headers['X-Target-URL'] = `${base}/sdapi/v1/txt2img`;
@@ -1212,7 +1213,7 @@
 
         async function processAsyncBatch(count, payload, headers) {
             const currentPort = window.location.port;
-            const proxyHost = window.location.hostname || '127.0.0.1';
+            const proxyHost = (window.location.hostname && window.location.hostname !== 'localhost') ? '127.0.0.1' : (window.location.hostname || '127.0.0.1');
             const proxySubmitUrl = (currentPort == '8001') ? `/submit_job` : `http://${proxyHost}:8001/submit_job`;
             const proxyStatusBase = (currentPort == '8001') ? `/check_job_status/` : `http://${proxyHost}:8001/check_job_status/`;
             const proxyResultBase = (currentPort == '8001') ? `/check_job/` : `http://${proxyHost}:8001/check_job/`;
@@ -1366,9 +1367,13 @@
                 let resultData = null;
 
                 if (job.useAsync) {
+                    const currentPort = window.location.port;
+                    const proxyHost = (window.location.hostname && window.location.hostname !== 'localhost') ? '127.0.0.1' : (window.location.hostname || '127.0.0.1');
+                    const proxyBase = (currentPort == '8001') ? '' : `http://${proxyHost}:8001`;
+                    
                     // --- ASYNC FLOW ---
                     // 1. Submit Job
-                    const submitRes = await fetch(job.url, {
+                    const submitRes = await fetch(`${proxyBase}${job.url}`, {
                         method: 'POST',
                         headers: { ...job.headers, 'X-Target-URL': job.targetUrl },
                         body: JSON.stringify(job.payload)
@@ -1384,7 +1389,7 @@
                     await new Promise((resolve, reject) => {
                         const poll = setInterval(async () => {
                             try {
-                                const checkRes = await fetch(`http://127.0.0.1:8001/check_job_status/${jobId}`);
+                                const checkRes = await fetch(`${proxyBase}/check_job_status/${jobId}`);
                                 if (!checkRes.ok) return; // Retry next tick
                                 
                                 const statusJson = await checkRes.json();
@@ -1442,9 +1447,13 @@
 
         async function fetchResultAndDisplay(jobId, promptText) {
             try {
+                const currentPort = window.location.port;
+                const proxyHost = (window.location.hostname && window.location.hostname !== 'localhost') ? '127.0.0.1' : (window.location.hostname || '127.0.0.1');
+                const proxyBase = (currentPort == '8001') ? '' : `http://${proxyHost}:8001`;
+                
                 // Show a small toast or indicator that image is downloading?
                 // For now, just fetch.
-                const res = await fetch(`http://127.0.0.1:8001/check_job/${jobId}`);
+                const res = await fetch(`${proxyBase}/check_job/${jobId}`);
                 if (!res.ok) throw new Error("Failed to download result");
                 const data = await res.json();
                 
