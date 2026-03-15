@@ -1136,10 +1136,23 @@
                 } catch(e) {
                     console.warn("Proxy unreachable", e);
                     if (window.location.protocol === 'https:') {
+                        const isGradio = apiUrl.value.includes('gradio.live') || apiUrl.value.includes('ngrok');
+                        let msg = "GitHub (HTTPS) cannot talk to your Local PC (HTTP) due to browser security.\n\n";
+                        
+                        if (isGradio) {
+                            msg += "💡 FIX: You are using a Gradio link. Just UNCHECK the 'Proxy' switch at the top and it will work directly!";
+                        } else {
+                            msg += "💡 FIX: To use this on Mobile, you must use your PC's Network IP instead of 127.0.0.1.\n\nCheck your PC terminal for the 'Network Access' link (e.g., http://192.168.1.5:8001) and open THAT on your phone.";
+                        }
+                        
                         connBadge.textContent = "HTTPS BLOCK (CLICK FOR FIX)";
                         connBadge.onclick = () => {
-                            if (confirm("GitHub (HTTPS) cannot talk to Local PC (HTTP). \n\nTo fix this, please use the LOCAL link from your terminal instead: \n\nhttp://127.0.0.1:8001\n\nOpen it now?")) {
-                                window.location.href = "http://127.0.0.1:8001";
+                            alert(msg);
+                            if (!isGradio) {
+                                const manualIp = prompt("Enter your PC's Network IP (from the terminal):", "192.168.1.100");
+                                if (manualIp) {
+                                    window.location.href = `http://${manualIp}:8001`;
+                                }
                             }
                         };
                     } else {
