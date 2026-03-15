@@ -1435,22 +1435,36 @@
 
                 } else {
                     // --- DIRECT FLOW (Legacy/Direct Connection) ---
-                    const response = await fetch(job.targetUrl, { 
-                        method: 'POST', 
-                        headers: job.headers, 
-                        body: JSON.stringify(job.payload) 
-                    });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    resultData = await response.json();
-                    
-                    // Handle Result for Direct Flow immediately
-                    if (resultData && resultData.images && resultData.images.length > 0) {
-                        displayImage(resultData.images[0], job.payload.prompt);
+                    try {
+                        const response = await fetch(job.targetUrl, { 
+                            method: 'POST', 
+                            headers: job.headers, 
+                            body: JSON.stringify(job.payload) 
+                        });
+                        if (!response.ok) {
+                            const errText = await response.text();
+                            throw new Error(`HTTP error! status: ${response.status} - ${errText}`);
+                        }
+                        resultData = await response.json();
+                        
+                        // Handle Result for Direct Flow immediately
+                        if (resultData && resultData.images && resultData.images.length > 0) {
+                            displayImage(resultData.images[0], job.payload.prompt);
+                        } else {
+                            throw new Error("No images in response");
+                        }
+                    } catch (directErr) {
+                        console.error("Direct fetch failed:", directErr);
+                        alert(`Direct connection failed: ${directErr.message}\n\nTIP: If you are on GitHub (HTTPS), you cannot talk directly to a local PC (HTTP). You MUST use the Proxy or open the app from http://127.0.0.1:8001`);
+                        throw directErr;
                     }
                 }
 
             } catch (error) {
                 console.error("Generation failed:", error);
+                // Reset UI on error
+                loader.style.display = 'none';
+                placeholder.classList.remove('d-none');
             } finally {
                 isProcessing = false;
                 // Immediately process next item
