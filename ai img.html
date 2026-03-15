@@ -1135,8 +1135,18 @@
                     }
                 } catch(e) {
                     console.warn("Proxy unreachable", e);
-                    connBadge.textContent = "PROXY OFFLINE"; 
-                    connBadge.className = "badge-status bg-danger"; 
+                    if (window.location.protocol === 'https:') {
+                        connBadge.textContent = "HTTPS BLOCK (CLICK FOR FIX)";
+                        connBadge.onclick = () => {
+                            if (confirm("GitHub (HTTPS) cannot talk to Local PC (HTTP). \n\nTo fix this, please use the LOCAL link from your terminal instead: \n\nhttp://127.0.0.1:8001\n\nOpen it now?")) {
+                                window.location.href = "http://127.0.0.1:8001";
+                            }
+                        };
+                    } else {
+                        connBadge.textContent = "PROXY OFFLINE"; 
+                        connBadge.onclick = null;
+                    }
+                    connBadge.className = "badge-status bg-danger pointer"; 
                     return;
                 }
             }
