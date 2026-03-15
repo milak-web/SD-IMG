@@ -1118,10 +1118,19 @@
             }
 
             if (!base) return alert("Please enter API URL");
+
+            // PROACTIVE SECURITY CHECK:
+            const isGithub = window.location.hostname.includes('github.io');
+            const isLocalApi = base.includes('127.0.0.1') || base.includes('localhost');
+            
+            if (isGithub && isLocalApi) {
+                alert("🛑 SECURITY BLOCK: You are on GitHub (HTTPS) trying to talk to Localhost (HTTP).\n\nThis is impossible because of browser security. You MUST either:\n1. Keep 'Proxy' checked.\n2. Or use the Local Link from your PC terminal (http://127.0.0.1:8001)");
+                useProxy.checked = true; // Force proxy on
+            }
             
             // AUTO-DETECT PROXY: If we are served from port 8001, use current host
             const currentPort = window.location.port;
-            const proxyHost = (window.location.hostname && window.location.hostname !== 'localhost') ? '127.0.0.1' : (window.location.hostname || '127.0.0.1');
+            const proxyHost = (window.location.hostname && !isGithub) ? window.location.hostname : '127.0.0.1';
             const proxyBase = (currentPort == '8001') ? `/proxy` : `http://${proxyHost}:8001/proxy`;
             
             // Check proxy health
@@ -1224,7 +1233,7 @@
                 for (let i = 0; i < count; i++) {
                      generationQueue.push({
                         url: `${base}/sdapi/v1/txt2img`,
-                        targetUrl: `${base}/sdapi/v1/txt2img` + `?t=${Date.now()}_${i}`,
+                        targetUrl: `${base}/sdapi/v1/txt2img`, // Removed timestamp to avoid issues with some APIs
                         payload: payloadBase,
                         headers: headers,
                         useAsync: false
